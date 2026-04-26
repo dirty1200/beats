@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beats Uploader</title>
-   <script src="https://unpkg.com/browser-id3-writer@4.4.0/dist/browser-id3-writer.js"></script>
+    <script src="https://unpkg.com/browser-id3-writer@4.4.0/dist/browser-id3-writer.js"></script>
 </head>
 <body style="background-color: #f0f0f0; padding: 20px;">
     <div id="app" style="font-family: sans-serif; max-width: 450px; margin: 0 auto; padding: 25px; background: #fff; border-radius: 10px;">
@@ -47,7 +47,8 @@
             const reader = new FileReader();
             reader.onload = function() {
                 try {
-                    const writer = new browserID3Writer(reader.result);
+                    // THE BUG IS FIXED HERE: It is ID3Writer, NOT browserID3Writer!
+                    const writer = new ID3Writer(reader.result);
                     if (artist) writer.setFrame('TPE1', [artist]);
                     if (title) writer.setFrame('TIT2', title);
                     writer.addTag();
@@ -67,6 +68,12 @@
                         if(res.ok) {
                             document.getElementById('statusMessage').innerText = await res.text();
                             document.getElementById('statusMessage').style.display = 'block';
+                            // Clear out the form after success
+                            document.getElementById('fileInput').value = '';
+                            document.getElementById('artistInput').value = '';
+                            document.getElementById('titleInput').value = '';
+                            document.getElementById('genreInput').value = '';
+                            document.getElementById('notesInput').value = '';
                         } else {
                             throw new Error("Server responded with an error.");
                         }
