@@ -82,8 +82,10 @@ document.getElementById('statusMessage').style.display = 'block';
 btn.innerText = "Skicka till Dropbox";
 btn.disabled = false;
 });
-} catch(e) { alert("Fel vid taggning."); btn.disabled =
-false; }
+} catch(e) { 
+    alert("KRASCHRAPPORT: " + e.name + " - " + e.message); 
+    btn.disabled = false; 
+}
 };
 reader.readAsArrayBuffer(file);
 });
