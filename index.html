@@ -1,107 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beats Uploader</title>
-    <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beats Uploader</title>
+<script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/
+dist/browser-id3-writer.js"></script>
 </head>
 <body style="background-color: #f0f0f0; padding: 20px;">
+<div id="app" style="font-family: sans-serif; max-width: 450px;
+margin: 0 auto; padding: 25px; background: #fff; border-radius: 10px;">
+<h3>Ladda upp din låt</h3>
+<label>Artist:</label>
 
-    <div id="mp3-tagger-app" style="font-family: sans-serif; max-width: 450px; margin: 0 auto; padding: 25px; border: 1px solid #e5e5e5; border-radius: 10px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; margin-bottom: 20px;">Upload Your Track</h3>
-        
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Artist Name:</label>
-        <input type="text" id="artistInput" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+<input type="text" id="artistInput" style="width:100%; margin-
+bottom:15px; padding:10px;">
 
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Song Title:</label>
-        <input type="text" id="titleInput" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+<label>Låttitel:</label>
 
-        <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+<input type="text" id="titleInput" style="width:100%; margin-
+bottom:15px; padding:10px;">
 
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Genre:</label>
-        <input type="text" id="genreInput" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+<label>Genre:</label>
 
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Extra Notes:</label>
-        <textarea id="notesInput" rows="3" style="width: 100%; box-sizing: border-box; margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+<input type="text" id="genreInput" style="width:100%; margin-
+bottom:15px; padding:10px;">
 
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Select MP3 File (Max 10MB):</label>
-        <input type="file" id="fileInput" accept="audio/mpeg" style="width: 100%; box-sizing: border-box; margin-bottom: 25px;">
+<label>Anteckningar:</label>
 
-        <button id="tagButton" style="width: 100%; padding: 12px; background-color: #222; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; transition: background-color 0.3s;">Add Tags & Send to Dropbox</button>
-        
-        <div id="statusMessage" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 4px; margin-top: 15px; display: none;"></div>
-    </div>
+<textarea id="notesInput" rows="3" style="width:100%; margin-
+bottom:20px; padding:10px;"></textarea>
 
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const artistInput = document.getElementById('artistInput');
-        const titleInput = document.getElementById('titleInput');
-        const genreInput = document.getElementById('genreInput');
-        const notesInput = document.getElementById('notesInput');
-        const tagButton = document.getElementById('tagButton');
-        const statusMessage = document.getElementById('statusMessage');
+<label>Välj MP3-fil (Max 10MB):</label>
+<input type="file" id="fileInput" accept="audio/mpeg"
+style="width:100%; margin-bottom:25px;">
+<button id="tagButton" style="width:100%; padding:12px;
+background:#222; color:#fff; cursor:pointer;">Skicka till Dropbox</button>
 
-        tagButton.addEventListener('click', () => {
-            const file = fileInput.files[0];
-            const artist = artistInput.value;
-            const title = titleInput.value;
-            const genre = genreInput.value;
-            const notes = notesInput.value;
+<div id="statusMessage" style="display:none; color:green; margin-
+top:15px;"></div>
 
-            if (!file) { alert('Please select an MP3 file first.'); return; }
-            if (file.size > 10 * 1024 * 1024) { alert('File is too large! 10MB max.'); fileInput.value = ''; return; }
+</div>
+<script>
+document.getElementById('tagButton').addEventListener('click', ()
+=> {
+const file = document.getElementById('fileInput').files[0];
+const artist = document.getElementById('artistInput').value;
+const title = document.getElementById('titleInput').value;
+const genre = document.getElementById('genreInput').value;
 
-            tagButton.innerText = "Processing & Uploading...";
-            tagButton.disabled = true;
-            statusMessage.style.display = 'none';
+const notes = document.getElementById('notesInput').value;
+if (!file) return alert('Välj en fil!');
+if (file.size > 10485760) return alert('Filen är för stor! Max
+10MB.');
+const btn = document.getElementById('tagButton');
+btn.innerText = "Laddar upp...";
+btn.disabled = true;
+const reader = new FileReader();
+reader.onload = function() {
+try {
+const writer = new browserID3Writer(reader.result);
+if (artist) writer.setFrame('TPE1', [artist]);
+if (title) writer.setFrame('TIT2', title);
+writer.addTag();
+const formData = new FormData();
+formData.append('file', writer.getBlob(), 'tagged_' +
+file.name);
+formData.append('artist', artist);
+formData.append('title', title);
+formData.append('genre', genre);
+formData.append('notes', notes);
+// VIKTIGT: Vi byter ut denna i Steg 4!
+const serverUrl = 'https://beats-2kd7.onrender.com/upload';
+fetch(serverUrl, { method: 'POST', body: formData })
+.then(async res => {
+if(res.ok) {
+document.getElementById('statusMessage').innerText = await res.text();
+document.getElementById('statusMessage').style.display = 'block';
+}
+}).finally(() => {
+btn.innerText = "Skicka till Dropbox";
+btn.disabled = false;
+});
+} catch(e) { alert("Fel vid taggning."); btn.disabled =
+false; }
+};
+reader.readAsArrayBuffer(file);
+});
+</script>
 
-            const reader = new FileReader();
-
-            reader.onload = function() {
-                try {
-                    const writer = new browserID3Writer(reader.result);
-                    if (artist) writer.setFrame('TPE1', [artist]);
-                    if (title) writer.setFrame('TIT2', title);
-                    writer.addTag();
-
-                    const blob = writer.getBlob();
-                    const formData = new FormData();
-                    formData.append('file', blob, 'tagged_' + file.name);
-                    formData.append('artist', artist);
-                    formData.append('title', title);
-                    formData.append('genre', genre);
-                    formData.append('notes', notes);
-
-                    // Talks directly to your server.js file now!
-                    fetch('/upload', { method: 'POST', body: formData })
-                    .then(async response => {
-                        if (response.ok) {
-                            statusMessage.innerText = await response.text();
-                            statusMessage.style.display = 'block';
-                            fileInput.value = ''; artistInput.value = ''; titleInput.value = ''; genreInput.value = ''; notesInput.value = '';
-                        } else {
-                            throw new Error('Upload failed');
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        alert("Connection error uploading.");
-                    })
-                    .finally(() => {
-                        tagButton.innerText = "Add Tags & Send to Dropbox";
-                        tagButton.disabled = false;
-                    });
-
-                } catch (error) {
-                    console.error(error);
-                    alert("Error tagging the file.");
-                    tagButton.innerText = "Add Tags & Send to Dropbox";
-                    tagButton.disabled = false;
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    </script>
 </body>
 </html>
