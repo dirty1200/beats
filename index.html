@@ -1,95 +1,91 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beats Uploader</title>
-<script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/
-dist/browser-id3-writer.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beats Uploader</title>
+    <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.js"></script>
 </head>
 <body style="background-color: #f0f0f0; padding: 20px;">
-<div id="app" style="font-family: sans-serif; max-width: 450px;
-margin: 0 auto; padding: 25px; background: #fff; border-radius: 10px;">
-<h3>Ladda upp din låt</h3>
-<label>Artist:</label>
+    <div id="app" style="font-family: sans-serif; max-width: 450px; margin: 0 auto; padding: 25px; background: #fff; border-radius: 10px;">
+        <h3>Upload Your Track</h3>
+        
+        <label>Artist Name:</label>
+        <input type="text" id="artistInput" style="width:100%; margin-bottom:15px; padding:10px;">
 
-<input type="text" id="artistInput" style="width:100%; margin-
-bottom:15px; padding:10px;">
+        <label>Song Title:</label>
+        <input type="text" id="titleInput" style="width:100%; margin-bottom:15px; padding:10px;">
 
-<label>Låttitel:</label>
+        <label>Genre:</label>
+        <input type="text" id="genreInput" style="width:100%; margin-bottom:15px; padding:10px;">
 
-<input type="text" id="titleInput" style="width:100%; margin-
-bottom:15px; padding:10px;">
+        <label>Extra Notes:</label>
+        <textarea id="notesInput" rows="3" style="width:100%; margin-bottom:20px; padding:10px;"></textarea>
 
-<label>Genre:</label>
+        <label>Select MP3 File (Max 10MB):</label>
+        <input type="file" id="fileInput" accept="audio/mpeg" style="width:100%; margin-bottom:25px;">
 
-<input type="text" id="genreInput" style="width:100%; margin-
-bottom:15px; padding:10px;">
+        <button id="tagButton" style="width:100%; padding:12px; background:#222; color:#fff; cursor:pointer;">Send to Dropbox</button>
+        <div id="statusMessage" style="display:none; color:green; margin-top:15px;"></div>
+    </div>
 
-<label>Anteckningar:</label>
+    <script>
+        document.getElementById('tagButton').addEventListener('click', () => {
+            const file = document.getElementById('fileInput').files[0];
+            const artist = document.getElementById('artistInput').value;
+            const title = document.getElementById('titleInput').value;
+            const genre = document.getElementById('genreInput').value;
+            const notes = document.getElementById('notesInput').value;
 
-<textarea id="notesInput" rows="3" style="width:100%; margin-
-bottom:20px; padding:10px;"></textarea>
+            if (!file) return alert('Please select an MP3 file first!');
+            if (file.size > 10485760) return alert('File is too large! Max 10MB.');
 
-<label>Välj MP3-fil (Max 10MB):</label>
-<input type="file" id="fileInput" accept="audio/mpeg"
-style="width:100%; margin-bottom:25px;">
-<button id="tagButton" style="width:100%; padding:12px;
-background:#222; color:#fff; cursor:pointer;">Skicka till Dropbox</button>
+            const btn = document.getElementById('tagButton');
+            btn.innerText = "Processing & Uploading...";
+            btn.disabled = true;
 
-<div id="statusMessage" style="display:none; color:green; margin-
-top:15px;"></div>
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const writer = new browserID3Writer(reader.result);
+                    if (artist) writer.setFrame('TPE1', [artist]);
+                    if (title) writer.setFrame('TIT2', title);
+                    writer.addTag();
 
-</div>
-<script>
-document.getElementById('tagButton').addEventListener('click', ()
-=> {
-const file = document.getElementById('fileInput').files[0];
-const artist = document.getElementById('artistInput').value;
-const title = document.getElementById('titleInput').value;
-const genre = document.getElementById('genreInput').value;
+                    const formData = new FormData();
+                    formData.append('file', writer.getBlob(), 'tagged_' + file.name);
+                    formData.append('artist', artist);
+                    formData.append('title', title);
+                    formData.append('genre', genre);
+                    formData.append('notes', notes);
 
-const notes = document.getElementById('notesInput').value;
-if (!file) return alert('Välj en fil!');
-if (file.size > 10485760) return alert('Filen är för stor! Max
-10MB.');
-const btn = document.getElementById('tagButton');
-btn.innerText = "Laddar upp...";
-btn.disabled = true;
-const reader = new FileReader();
-reader.onload = function() {
-try {
-const writer = new browserID3Writer(reader.result);
-if (artist) writer.setFrame('TPE1', [artist]);
-if (title) writer.setFrame('TIT2', title);
-writer.addTag();
-const formData = new FormData();
-formData.append('file', writer.getBlob(), 'tagged_' +
-file.name);
-formData.append('artist', artist);
-formData.append('title', title);
-formData.append('genre', genre);
-formData.append('notes', notes);
-// VIKTIGT: Vi byter ut denna i Steg 4!
-const serverUrl = 'https://beats-2kd7.onrender.com/upload';
-fetch(serverUrl, { method: 'POST', body: formData })
-.then(async res => {
-if(res.ok) {
-document.getElementById('statusMessage').innerText = await res.text();
-document.getElementById('statusMessage').style.display = 'block';
-}
-}).finally(() => {
-btn.innerText = "Skicka till Dropbox";
-btn.disabled = false;
-});
-} catch(e) { 
-    alert("KRASCHRAPPORT: " + e.name + " - " + e.message); 
-    btn.disabled = false; 
-}
-};
-reader.readAsArrayBuffer(file);
-});
-</script>
+                    // IMPORTANT: Put your Render URL here! 
+                    const serverUrl = 'https://beats-2kd7.onrender.com/upload';
 
+                    fetch(serverUrl, { method: 'POST', body: formData })
+                    .then(async res => {
+                        if(res.ok) {
+                            document.getElementById('statusMessage').innerText = await res.text();
+                            document.getElementById('statusMessage').style.display = 'block';
+                        } else {
+                            throw new Error("Server responded with an error.");
+                        }
+                    }).catch(error => {
+                        console.error(error);
+                        alert("CRASH REPORT (Network): " + error.message);
+                    }).finally(() => {
+                        btn.innerText = "Send to Dropbox";
+                        btn.disabled = false;
+                    });
+                } catch(e) { 
+                    console.error(e);
+                    alert("CRASH REPORT (Tagging): " + e.name + " - " + e.message); 
+                    btn.innerText = "Send to Dropbox";
+                    btn.disabled = false; 
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
 </body>
 </html>
